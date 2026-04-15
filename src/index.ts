@@ -2,14 +2,22 @@ import 'dotenv/config';
 
 import express from "express";
 import apiRouter from "./routes/index.ts";
+import { initMinio } from './storage/minio-storage.ts';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+async function main() {
+    await initMinio();
 
-app.use(express.json());
+    const app = express();
+    const PORT = process.env.PORT || 3000;
 
-app.use('/api', apiRouter);
 
-app.listen(PORT, () => {
-    console.log("Server is up running on http://127.0.0.1:" + PORT);
-});
+    app.use(express.json());
+
+    app.use('/api', apiRouter);
+
+    app.listen(PORT, () => {
+        console.log("Server is up running on http://127.0.0.1:" + PORT);
+    });
+}
+
+main();
