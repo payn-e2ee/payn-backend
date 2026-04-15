@@ -39,5 +39,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-  }
+  },
+  "exclude": [
+    "drizzle.config.ts"
+  ]
 }

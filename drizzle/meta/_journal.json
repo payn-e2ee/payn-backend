@@ -8,6 +8,13 @@
       "when": 1776202699591,
       "tag": "0000_dazzling_marvel_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776278580988,
+      "tag": "0001_narrow_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

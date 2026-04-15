@@ -1,0 +1,75 @@
+import type { Request, Response } from "express";
+import { getUserByUsername } from "../repositories/user-repository.ts";
+import { loginForm } from "../zod-schema/login-form.ts";
+import bcrypt from "bcrypt";
+import { createDevice } from "../repositories/device.repository.ts";
+import { isValidCurve25519PemKey } from "../helpers/crypto-helpers.ts";
+import { generateToken } from "../helpers/jwt-helpers.ts";
+
+export async function loginHandler(req: Request, res: Response): Promise<void> {
+    const result = loginForm.safeParse(req.body);
+
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { username, password, base64_identity_key } = result.data;
+
+    if (!isValidCurve25519PemKey(base64_identity_key)) {
+        res.status(400).json({
+            message: "Invalid identity key format",
+        });
+        return;
+    }
+
+    try {
+        const user = await getUserByUsername(username);
+        if (!user) {
+            res.status(401).json({
+                message: "Invalid username or password",
+            });
+            return;
+        }
+
+        const isValidPassword = bcrypt.compareSync(password, user.password);
+        if (!isValidPassword) {
+            res.status(401).json({
+                message: "Invalid username or password",
+            });
+            return;
+        }
+
+        const device = await createDevice(user.id!, base64_identity_key);
+
+        const tokenData = {
+            user_id: user.id,
+            device_id: device?.id,
+        };
+
+        const accessToken = generateToken(tokenData);
+
+        res.status(200).json({
+            message: "Login successful",
+            data: {
+                access_token: accessToken,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    firstname: user.firstname,
+                    lastname: user.lastname,
+                    phone_number: user.phone_number,
+                },
+            },
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "An unexpected error occurred. Please try again later.",
+        });
+    }
+}
