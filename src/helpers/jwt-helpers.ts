@@ -5,7 +5,7 @@ export function verifyToken(accessToken: string): jwt.JwtPayload | null {
         return jwt.verify(
             accessToken,
             process.env.JWT_SECRET as string,
-            { algorithms: ["HS256"] }
+            { algorithms: ["HS256"], ignoreExpiration: false }
         ) as JwtPayload;
     } catch (err) {
         console.error("verifyToken:", err);
