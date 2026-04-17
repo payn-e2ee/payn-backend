@@ -3,7 +3,6 @@ import { getUserByUsername } from "../repositories/user-repository.ts";
 import { loginForm } from "../zod-schema/login-form.ts";
 import bcrypt from "bcrypt";
 import { createDevice } from "../repositories/device.repository.ts";
-import { isValidCurve25519PemKey } from "../helpers/crypto-helpers.ts";
 import { generateToken } from "../helpers/jwt-helpers.ts";
 
 export async function loginHandler(req: Request, res: Response): Promise<void> {
@@ -18,13 +17,6 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
     }
 
     const { username, password, base64_identity_key } = result.data;
-
-    if (!isValidCurve25519PemKey(base64_identity_key)) {
-        res.status(400).json({
-            message: "Invalid identity key format",
-        });
-        return;
-    }
 
     try {
         const user = await getUserByUsername(username);

@@ -3,6 +3,8 @@ version: "3.9"
 services:
   backend:
     build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     container_name: node_backend
     ports:
       - "3000:3000"

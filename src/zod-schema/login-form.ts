@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const loginForm = z.object({
-    username: z.string(),
-    password: z.string(),
-    base64_identity_key: z.string(),
+    username: z.string().nonempty(),
+    password: z.string().nonempty(),
+    base64_identity_key: z.string().nonempty(),
 });
 
 export type LoginForm = z.infer<typeof loginForm>;

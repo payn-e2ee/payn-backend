@@ -5,7 +5,7 @@ export const createUserForm = z.object({
     firstname: z.string(),
     lastname: z.string(),
     password: z.string(),
-    phone_number: z.number(),
+    phone_number: z.string(),
 });
 
 export type CreateUserForm = z.infer<typeof createUserForm>;

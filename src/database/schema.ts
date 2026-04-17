@@ -8,7 +8,7 @@ export const users = pgTable("users", {
     firstname: varchar(),
     lastname: varchar(),
     password: varchar().notNull(),
-    phone_number: integer().notNull(),
+    phone_number: varchar().notNull(),
     is_verified: boolean().default(false),
     created_at: timestamp(),
 });

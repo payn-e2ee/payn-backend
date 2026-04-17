@@ -15,6 +15,13 @@
       "when": 1776278580988,
       "tag": "0001_narrow_jamie_braddock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776384440860,
+      "tag": "0002_nasty_cannonball",
+      "breakpoints": true
     }
   ]
 }
