@@ -22,6 +22,13 @@
       "when": 1776384440860,
       "tag": "0002_nasty_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776529370301,
+      "tag": "0003_open_dagger",
+      "breakpoints": true
     }
   ]
 }

@@ -1,31 +1,9 @@
 import type { Request, Response } from "express";
-import { verifyToken } from "../helpers/jwt-helpers.ts";
 import { getUserById } from "../repositories/user-repository.ts";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
-    const accessToken = req.headers["authorization"]?.slice("Bearer ".length);
-    if (!accessToken) {
-        res.status(401).json({
-            message: "Unauthorized",
-        });
-        return;
-    }
-
-    const jwtPayload = verifyToken(accessToken);
-    if (!jwtPayload) {
-        res.status(401).json({
-            message: "Unauthorized",
-        });
-        return;
-    }
-
-    const userId = jwtPayload["user_id"];
-    if (!userId) {
-        res.status(401).json({
-            message: "Unauthorized",
-        });
-        return;
-    }
+    const authSession = req.authSession!;
+    const userId = authSession.user_id;
 
     const user = await getUserById(userId);
     if (!user) {

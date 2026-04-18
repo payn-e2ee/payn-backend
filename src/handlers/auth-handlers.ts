@@ -1,9 +1,42 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { getUserByUsername } from "../repositories/user-repository.ts";
 import { loginForm } from "../zod-schema/login-form.ts";
 import bcrypt from "bcrypt";
 import { createDevice } from "../repositories/device.repository.ts";
-import { generateToken } from "../helpers/jwt-helpers.ts";
+import { generateToken, verifyToken } from "../helpers/jwt-helpers.ts";
+import { match } from "path-to-regexp";
+
+const PROTECTED_ROUTES: string[] = [
+    "/users",
+    "/chats",
+];
+
+export async function authMiddlewareHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+    if (!isProtectedPath(req.path)) {
+        next();
+        return;
+    }
+
+    const accessToken = req.headers["authorization"]?.slice("Bearer ".length);
+    if (!accessToken) {
+        res.status(401).json({
+            message: "Unauthorized",
+        });
+        return;
+    }
+
+    const jwtPayload = verifyToken(accessToken);
+    if (!jwtPayload) {
+        res.status(401).json({
+            message: "Unauthorized",
+        });
+        return;
+    }
+
+    const authSession = jwtPayload as AuthSession;
+    req.authSession = authSession;
+    next();
+}
 
 export async function loginHandler(req: Request, res: Response): Promise<void> {
     const result = loginForm.safeParse(req.body);
@@ -64,4 +97,11 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
             message: "An unexpected error occurred. Please try again later.",
         });
     }
+}
+
+function isProtectedPath(path: string): boolean {
+    return PROTECTED_ROUTES.some((pattern) => {
+        const matcher = match(pattern, { decode: decodeURIComponent });
+        return matcher(path) !== false;
+    });
 }
