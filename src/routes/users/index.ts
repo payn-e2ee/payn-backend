@@ -1,9 +1,8 @@
 import { Router } from "express";
-import { createUser, getUsers } from "../../controllers/user-controller.ts";
+import { getCurrentUserHandler } from "../../handlers/users-handlers.ts";
 
 const router = Router();
 
-router.get("/", getUsers);
-router.post("/", createUser);
+router.get("/", getCurrentUserHandler);
 
 export default router;

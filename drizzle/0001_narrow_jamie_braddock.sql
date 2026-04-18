@@ -1,0 +1,1 @@
+ALTER TABLE "devices" ADD CONSTRAINT "devices_identity_key_unique" UNIQUE("identity_key");

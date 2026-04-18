@@ -8,7 +8,7 @@ export const users = pgTable("users", {
     firstname: varchar(),
     lastname: varchar(),
     password: varchar().notNull(),
-    phone_number: integer().notNull(),
+    phone_number: varchar().notNull(),
     is_verified: boolean().default(false),
     created_at: timestamp(),
 });
@@ -25,7 +25,7 @@ export type Device = InferInsertModel<typeof devices>;
 export const devices = pgTable("devices", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     user_id: uuid().references(() => users.id),
-    identity_key: varchar({ length: 255 }).notNull(),
+    identity_key: varchar({ length: 255 }).notNull().unique(),
     created_at: timestamp().defaultNow(),
 });
 
