@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { verifyToken } from "../helpers/jwt-helpers.ts";
-import { getUserById } from "../repositories/user-repository.ts";
+import { createOneUser, getUserById, getUserByUsername } from "../repositories/user-repository.ts";
+import { createUserForm } from "../zod-schema/create-user-form.ts";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const accessToken = req.headers["authorization"]?.slice("Bearer ".length);
@@ -45,4 +46,75 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
             phone_number: user.phone_number,
         },
     });
+}
+
+export async function registerHandler(req: Request, res: Response): Promise<void> {
+    const result = createUserForm.safeParse(req.body);
+
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { phone_number, username, password, firstname, lastname, verification_token } = result.data;
+
+    if (verification_token !== process.env.BYPASS_TOKEN) {
+        //soon: verify the token with registered tokens in the database after implementing sms provider
+        res.status(400).json({
+            message: "Invalid verification token",
+        });
+        return;
+    }
+
+    try {
+        const existingUser = await getUserByUsername(username);
+        if (existingUser) {
+            res.status(400).json({
+                message: "Username already exists",
+            });
+            return;
+        }
+
+        if (password.length < 6) {
+            res.status(400).json({
+                message: "Password must be at least 6 characters long",
+            });
+            return;
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, 10);
+
+        const newUser = await createOneUser({
+            phone_number,
+            username,
+            password: hashedPassword,
+            firstname,
+            lastname,
+            is_verified: true,
+        });
+
+        const user = newUser[0];
+        if (!user) {
+            throw new Error("Failed to create user");
+        }
+
+        res.status(201).json({
+            message: "User registered successfully",
+            user: {
+                id: user.id,
+                username: user.username,
+                firstname: user.firstname,
+                lastname: user.lastname,
+                phone_number: user.phone_number,
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "An unexpected error occurred. Please try again later.",
+        });
+    }
 }
