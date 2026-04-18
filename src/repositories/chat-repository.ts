@@ -2,8 +2,10 @@ import { eq, and } from "drizzle-orm";
 import { db } from "../database/index.ts";
 import { chatMembers } from "../database/schema.ts";
 
-export async function listChats(userId: string, deviceId: string) {
+export async function listChats(userId: string, deviceId: string, offset: number, limit: number) {
     return await db.query.chats.findMany({
+        offset: offset,
+        limit: limit,
         where: (chats, { exists }) =>
             exists(
                 db.select()
