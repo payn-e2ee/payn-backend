@@ -77,6 +77,16 @@ export const notifications = pgTable("notifications", {
     created_at: timestamp().defaultNow(),
 });
 
+export type Contact = InferInsertModel<typeof contacts>;
+export const contacts = pgTable("contacts", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    user_id: uuid().references(() => users.id), // the owner of the contact
+    firstname: varchar(),
+    lastname: varchar(),
+    contact_user_id: uuid().references(() => users.id),
+    created_at: timestamp().defaultNow(),
+});
+
 // Relations
 export const messagesRelations = relations(messages, ({ one, many }) => ({
     chat: one(chats, {
@@ -106,5 +116,16 @@ export const messageDeliveriesRelations = relations(messageDevliveries, ({ one }
     message: one(messages, {
         fields: [messageDevliveries.message_id],
         references: [messages.id],
+    }),
+}));
+
+export const contactsRelations = relations(contacts, ({ one }) => ({
+    user: one(users, {
+        fields: [contacts.user_id],
+        references: [users.id],
+    }),
+    contactUser: one(users, {
+        fields: [contacts.contact_user_id],
+        references: [users.id],
     }),
 }));
