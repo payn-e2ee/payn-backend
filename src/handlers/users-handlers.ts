@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { verifyToken } from "../helpers/jwt-helpers.ts";
 import { createOneUser, getUserById, getUserByUsername } from "../repositories/user-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
+import bcrypt from "bcrypt";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const accessToken = req.headers["authorization"]?.slice("Bearer ".length);
@@ -78,14 +79,8 @@ export async function registerHandler(req: Request, res: Response): Promise<void
             return;
         }
 
-        if (password.length < 6) {
-            res.status(400).json({
-                message: "Password must be at least 6 characters long",
-            });
-            return;
-        }
-
-        const hashedPassword = bcrypt.hashSync(password, 10);
+        const salt = bcrypt.genSaltSync();
+        const hashedPassword = bcrypt.hashSync(password, salt);
 
         const newUser = await createOneUser({
             phone_number,
@@ -98,7 +93,9 @@ export async function registerHandler(req: Request, res: Response): Promise<void
 
         const user = newUser[0];
         if (!user) {
-            throw new Error("Failed to create user");
+            console.log(newUser);
+            res.status(500).json({ message: "Internal Server Error" });
+            return;
         }
 
         res.status(201).json({
@@ -111,8 +108,14 @@ export async function registerHandler(req: Request, res: Response): Promise<void
                 phone_number: user.phone_number,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
+        if (error.code === "23505") {
+            res.status(400).json({
+                message: "Username already exists",
+            });
+            return;
+        }
         res.status(500).json({
             message: "An unexpected error occurred. Please try again later.",
         });

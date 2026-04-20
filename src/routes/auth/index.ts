@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { loginHandler, registerHandler, sendOtpHandler, verifyOtpHandler } from "../../handlers/auth-handlers.ts";
+import { loginHandler, sendOtpHandler, verifyOtpHandler } from "../../handlers/auth-handlers.ts";
+import { registerHandler } from "../../handlers/users-handlers.ts";
 
 const router = Router();
 
