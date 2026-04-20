@@ -9,8 +9,9 @@ import { match } from "path-to-regexp";
 const PROTECTED_ROUTES: string[] = [
     "/users",
     "/chats",
+    "/contacts",
+    "/contacts/:id",
     "/chats/:id",
-    "/contacts"
 ];
 
 export async function authMiddlewareHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
