@@ -1,4 +1,4 @@
-import type { InferInsertModel } from "drizzle-orm";
+import { relations, type InferInsertModel } from "drizzle-orm";
 import { pgTable, uuid, varchar, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export type User = InferInsertModel<typeof users>;
@@ -35,6 +35,14 @@ export const chats = pgTable("chats", {
     created_at: timestamp().defaultNow(),
 });
 
+export type ChatMember = InferInsertModel<typeof chatMembers>;
+export const chatMembers = pgTable("chat_members", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    chat_id: uuid().references(() => chats.id),
+    user_id: uuid().references(() => users.id),
+    created_at: timestamp().defaultNow(),
+});
+
 export type Message = InferInsertModel<typeof messages>;
 export const messages = pgTable("messages", {
     id: uuid().defaultRandom().primaryKey().notNull(),
@@ -45,8 +53,8 @@ export const messages = pgTable("messages", {
     created_at: timestamp().defaultNow(),
 });
 
-export type MessageDelivery = InferInsertModel<typeof message_devliveries>;
-export const message_devliveries = pgTable("message_devliveries", {
+export type MessageDelivery = InferInsertModel<typeof messageDevliveries>;
+export const messageDevliveries = pgTable("message_devliveries", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     message_id: uuid().references(() => messages.id),
     device_id: uuid().references(() => devices.id),
@@ -68,3 +76,56 @@ export const notifications = pgTable("notifications", {
     status: varchar({ length: 255 }),
     created_at: timestamp().defaultNow(),
 });
+
+export type Contact = InferInsertModel<typeof contacts>;
+export const contacts = pgTable("contacts", {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    user_id: uuid().references(() => users.id), // the owner of the contact
+    firstname: varchar(),
+    lastname: varchar(),
+    contact_user_id: uuid().references(() => users.id),
+    created_at: timestamp().defaultNow(),
+});
+
+// Relations
+export const messagesRelations = relations(messages, ({ one, many }) => ({
+    chat: one(chats, {
+        fields: [messages.chat_id],
+        references: [chats.id],
+    }),
+    messageDevliveries: many(messageDevliveries),
+}));
+
+export const chatsRelations = relations(chats, ({ many }) => ({
+    chatMembers: many(chatMembers),
+    messages: many(messages),
+}));
+
+export const chatMembersRelations = relations(chatMembers, ({ one }) => ({
+    chat: one(chats, {
+        fields: [chatMembers.chat_id],
+        references: [chats.id],
+    }),
+    user: one(users, {
+        fields: [chatMembers.user_id],
+        references: [users.id],
+    }),
+}));
+
+export const messageDeliveriesRelations = relations(messageDevliveries, ({ one }) => ({
+    message: one(messages, {
+        fields: [messageDevliveries.message_id],
+        references: [messages.id],
+    }),
+}));
+
+export const contactsRelations = relations(contacts, ({ one }) => ({
+    user: one(users, {
+        fields: [contacts.user_id],
+        references: [users.id],
+    }),
+    contactUser: one(users, {
+        fields: [contacts.contact_user_id],
+        references: [users.id],
+    }),
+}));
