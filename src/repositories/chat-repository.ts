@@ -68,3 +68,38 @@ export async function listChats(userId: string, deviceId: string, offset: number
         },
     });
 }
+
+export async function getChatForUserById(chatId: string, userId: string) {
+    return await db.query.chats.findFirst({
+        where: (chats, { eq, and, exists }) =>
+            and(
+                eq(chats.id, chatId),
+                exists(
+                    db.select()
+                        .from(chatMembers)
+                        .where(
+                            and(
+                                eq(chatMembers.chat_id, chats.id),
+                                eq(chatMembers.user_id, userId)
+                            )
+                        )
+                )
+            ),
+        with: {
+            chatMembers: {
+                with: {
+                    user: {
+                        columns: {
+                            id: true,
+                            username: true,
+                            firstname: true,
+                            lastname: true,
+                            phone_number: true,
+                            created_at: true,
+                        }
+                    },
+                },
+            },
+        },
+    });
+}
