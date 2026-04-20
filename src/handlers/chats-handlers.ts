@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { listChats } from "../repositories/chat-repository.ts";
+import { getChatForUserById, listChats } from "../repositories/chat-repository.ts";
 
 export async function listChatsHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -12,5 +12,24 @@ export async function listChatsHandler(req: Request, res: Response): Promise<voi
     res.status(200).json({
         message: "chats feteched successfully",
         data: chats,
+    });
+}
+
+export async function getChatByIdHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+    const chatId = req.params.id as string;
+
+    const chat = await getChatForUserById(chatId, userId);
+    if (!chat) {
+        res.status(401).json({
+            message: "The requested chat does not exist or you are not authorized to access it.",
+        });
+        return;
+    }
+
+    res.status(200).json({
+        message: "chat fetched successfully",
+        data: chat,
     });
 }
