@@ -6,7 +6,7 @@ export async function getAllUsers(): Promise<Array<User>> {
     return await db.query.users.findMany();
 }
 
-export async function createOneUser(createUserForm: CreateUserForm): Promise<Array<User>> {
+export async function createOneUser(createUserForm: CreateUserForm & { is_verified: boolean }): Promise<Array<User>> {
     return await db.insert(users).values(createUserForm).returning();
 }
 
