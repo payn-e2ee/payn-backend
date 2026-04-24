@@ -1,4 +1,5 @@
 import { db } from "../database/index.ts";
+import { contacts, type Contact } from "../database/schema.ts";
 
 export async function listContacts(userId: string, offset: number, limit: number) {
     return await db.query.contacts.findMany({
@@ -35,5 +36,15 @@ export async function getContactForUserById(contactId: string, userId: string) {
                 }
             },
         },
+    });
+}
+
+export async function addContact(contactData: Contact) {
+    return await db.insert(contacts).values(contactData).returning();
+}
+
+export async function getContactByUserIdAndContactUserId(userId: string, contactUserId: string) {
+    return await db.query.contacts.findFirst({
+        where: (contacts, { and, eq }) => and(eq(contacts.user_id, userId), eq(contacts.contact_user_id, contactUserId)),
     });
 }
