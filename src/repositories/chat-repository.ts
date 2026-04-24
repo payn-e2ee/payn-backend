@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "../database/index.ts";
-import { chatMembers } from "../database/schema.ts";
+import { chats, chatMembers, type Chat, type ChatMember } from "../database/schema.ts";
 
 export async function listChats(userId: string, deviceId: string, offset: number, limit: number) {
     return await db.query.chats.findMany({
@@ -102,4 +102,59 @@ export async function getChatForUserById(chatId: string, userId: string) {
             },
         },
     });
+}
+
+export async function createOneChat(): Promise<Chat | undefined> {
+    const result = await db.insert(chats).values({}).returning();
+    return result[0];
+}
+
+export async function addChatMembers(chatId: string, userIds: string[]): Promise<ChatMember[]> {
+    const members = userIds.map(userId => ({
+        chat_id: chatId,
+        user_id: userId,
+    }));
+    return await db.insert(chatMembers).values(members).returning();
+}
+
+export async function getChatById(chatId: string): Promise<Chat | undefined> {
+    return await db.query.chats.findFirst({
+        where: (chats, { eq }) => eq(chats.id, chatId),
+    });
+}
+
+export async function getChatMembers(chatId: string): Promise<ChatMember[]> {
+    return await db.query.chatMembers.findMany({
+        where: (chatMembers, { eq }) => eq(chatMembers.chat_id, chatId),
+    });
+}
+
+export async function getChatByMemberIds(memberIds: string[]): Promise<Chat | undefined> {
+    const chat = await db.query.chats.findFirst({
+        where: (chats, { eq, and, exists }) =>
+            and(
+                exists(
+                    db.select()
+                        .from(chatMembers)
+                        .where(
+                            and(
+                                eq(chatMembers.chat_id, chats.id),
+                                eq(chatMembers.user_id, memberIds[0])
+                            )
+                        )
+                ),
+                exists(
+                    db.select()
+                        .from(chatMembers)
+                        .where(
+                            and(
+                                eq(chatMembers.chat_id, chats.id),
+                                eq(chatMembers.user_id, memberIds[1])
+                            )
+                        )
+                )
+            ),
+    });
+
+    return chat || undefined;
 }
