@@ -21,3 +21,9 @@ export async function getUserById(userId: string): Promise<User | undefined> {
         where: (users, { eq }) => eq(users.id, userId),
     });
 }
+
+export async function getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
+    return await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.phone_number, phoneNumber),
+    });
+}
