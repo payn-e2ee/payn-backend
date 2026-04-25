@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact } from "../repositories/contact-repository.ts";
+import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact, deleteContact } from "../repositories/contact-repository.ts";
 import { getUserByPhoneNumber } from "../repositories/user-repository.ts";
 import { addContactForm } from "../zod-schema/add-contact-form.ts";
 
@@ -85,5 +85,25 @@ export async function addContactHandler(req: Request, res: Response): Promise<vo
     res.status(201).json({
         message: "Contact added successfully",
         data: newContact[0],
+    });
+}
+
+export async function deleteContactHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+    const contactId = req.params.id as string;
+
+    const deletedContact = await deleteContact(contactId, userId);
+
+    if (!deletedContact || deletedContact.length === 0) {
+        res.status(404).json({
+            message: "The requested contact does not exist or you are not authorized to delete it.",
+        });
+        return;
+    }
+
+    res.status(200).json({
+        message: "Contact deleted successfully",
+        data: deletedContact[0],
     });
 }
