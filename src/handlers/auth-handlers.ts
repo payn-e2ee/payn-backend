@@ -10,6 +10,7 @@ const PROTECTED_ROUTES: string[] = [
     "/users",
     "/chats",
     "/chats/:id",
+    "/chats/:id/messages",
     "/contacts"
 ];
 
