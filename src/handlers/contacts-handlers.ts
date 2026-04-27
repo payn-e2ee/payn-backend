@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact, deleteContact, updateContact } from "../repositories/contact-repository.ts";
+import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact, deleteContact, updateContact, searchContacts } from "../repositories/contact-repository.ts";
 import { getUserByPhoneNumber } from "../repositories/user-repository.ts";
 import { addContactForm } from "../zod-schema/add-contact-form.ts";
 import { editContactForm } from "../zod-schema/edit-contact-form.ts";
@@ -109,6 +109,26 @@ export async function deleteContactHandler(req: Request, res: Response): Promise
     });
 }
 
+export async function searchContactsHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+    const keyword = req.query.keyword?.toString() || "";
+
+    if (!keyword) {
+        res.status(400).json({
+            message: "Keyword parameter is required",
+        });
+        return;
+    }
+
+    const contacts = await searchContacts(userId, keyword);
+
+    res.status(200).json({
+        message: "Contacts searched successfully",
+        data: contacts,
+    });
+}
+
 export async function updateContactHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
     const { user_id: userId } = authSession;
@@ -123,7 +143,6 @@ export async function updateContactHandler(req: Request, res: Response): Promise
         });
         return;
     }
-
     const { firstname, lastname } = validatedBody.data;
 
     const updatedContact = await updateContact(contactId, userId, {
