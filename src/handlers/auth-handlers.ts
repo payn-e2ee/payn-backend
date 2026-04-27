@@ -4,14 +4,16 @@ import { loginForm } from "../zod-schema/login-form.ts";
 import bcrypt from "bcrypt";
 import { createDevice } from "../repositories/device.repository.ts";
 import { generateToken, verifyToken } from "../helpers/jwt-helpers.ts";
+import { sendOtpForm, verifyOtpForm } from "../zod-schema/auth-forms.ts";
 import { match } from "path-to-regexp";
 
 const PROTECTED_ROUTES: string[] = [
     "/users",
     "/chats",
+    "/contacts",
+    "/contacts/:id",
     "/chats/:id",
     "/chats/:id/messages",
-    "/contacts"
 ];
 
 export async function authMiddlewareHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -102,6 +104,57 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
     }
 }
 
+export async function sendOtpHandler(req: Request, res: Response): Promise<void> {
+    const result = sendOtpForm.safeParse(req.body);
+
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { bypass_token } = result.data;
+
+    if (bypass_token === process.env.BYPASS_TOKEN) {
+        //testing mode: skip sms provider
+        res.status(200).json({
+            message: "OTP sent via  SMS",
+        });
+    } else {
+        //soon: sms provider not implemented yet...
+        res.status(400).json({
+            message: "Invalid bypass token",
+        });
+    }
+}
+
+export async function verifyOtpHandler(req: Request, res: Response): Promise<void> {
+    const result = verifyOtpForm.safeParse(req.body);
+
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { otp, bypass_token } = result.data;
+
+    if (bypass_token === process.env.BYPASS_TOKEN) {
+        //testing mode: skip sms provider
+        res.status(200).json({
+            verification_token: process.env.BYPASS_TOKEN,
+        });
+    } else {
+        //check otp with sms provider (not implemented yet)
+        res.status(400).json({
+            message: "Invalid OTP",
+        });
+    }
+}
 function isProtectedPath(path: string): boolean {
     return PROTECTED_ROUTES.some((pattern) => {
         const matcher = match(pattern, { decode: decodeURIComponent });

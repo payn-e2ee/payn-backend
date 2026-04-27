@@ -4,7 +4,7 @@ import { pgTable, uuid, varchar, integer, timestamp, boolean } from "drizzle-orm
 export type User = InferInsertModel<typeof users>;
 export const users = pgTable("users", {
     id: uuid().defaultRandom().primaryKey().notNull(),
-    username: varchar({ length: 255 }).notNull(),
+    username: varchar({ length: 255 }).notNull().unique(),
     firstname: varchar(),
     lastname: varchar(),
     password: varchar().notNull(),
