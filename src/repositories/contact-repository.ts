@@ -53,3 +53,10 @@ export async function getContactByUserIdAndContactUserId(userId: string, contact
 export async function deleteContact(contactId: string, userId: string) {
     return await db.delete(contacts).where(and(eq(contacts.id, contactId), eq(contacts.user_id, userId))).returning();
 }
+
+export async function updateContact(contactId: string, userId: string, contactData: Partial<Contact>) {
+    return await db.update(contacts)
+        .set(contactData)
+        .where(and(eq(contacts.id, contactId), eq(contacts.user_id, userId)))
+        .returning();
+}
