@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
-import { createOneUser, getUserById, getUserByUsername } from "../repositories/user-repository.ts";
+import { createOneUser, getUserById, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
 import bcrypt from "bcrypt";
+import { updateUserForm } from "../zod-schema/update-user-form.ts";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -98,4 +99,35 @@ export async function registerHandler(req: Request, res: Response): Promise<void
             message: "An unexpected error occurred. Please try again later.",
         });
     }
+}
+
+export async function updateCurrentUserHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const userId = authSession.user_id;
+    const result = updateUserForm.safeParse(req.body);
+
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    try {
+        const updatedUsers = await updateUserById(userId, result.data);
+        if (updatedUsers.length > 0) {
+            res.status(200).json({
+                message: "user updated successfully",
+                data: updatedUsers[0],
+            });
+        }
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "An unexpected error occurred. Please try again later.",
+        });
+    }
+
 }
