@@ -86,3 +86,10 @@ export async function searchContacts(userId: string, keyword: string) {
         )
     );
 }
+
+export async function updateContact(contactId: string, userId: string, contactData: Partial<Contact>) {
+    return await db.update(contacts)
+        .set(contactData)
+        .where(and(eq(contacts.id, contactId), eq(contacts.user_id, userId)))
+        .returning();
+}
