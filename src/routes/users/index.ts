@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { getCurrentUserHandler } from "../../handlers/users-handlers.ts";
+import { getCurrentUserHandler, updateCurrentUserHandler } from "../../handlers/users-handlers.ts";
 
 const router = Router();
 
 router.get("/", getCurrentUserHandler);
+router.patch("/", updateCurrentUserHandler);
 
 export default router;
