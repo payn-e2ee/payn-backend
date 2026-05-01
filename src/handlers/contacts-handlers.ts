@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
-import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact, deleteContact } from "../repositories/contact-repository.ts";
+import { getContactByUserIdAndContactUserId, getContactForUserById, listContacts, addContact, deleteContact, updateContact, searchContacts } from "../repositories/contact-repository.ts";
 import { getUserByPhoneNumber } from "../repositories/user-repository.ts";
 import { addContactForm } from "../zod-schema/add-contact-form.ts";
+import { editContactForm } from "../zod-schema/edit-contact-form.ts";
 
 export async function listContactsHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -105,5 +106,59 @@ export async function deleteContactHandler(req: Request, res: Response): Promise
     res.status(200).json({
         message: "Contact deleted successfully",
         data: deletedContact[0],
+    });
+}
+
+export async function searchContactsHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+    const keyword = req.query.keyword?.toString() || "";
+
+    if (!keyword) {
+        res.status(400).json({
+            message: "Keyword parameter is required",
+        });
+        return;
+    }
+
+    const contacts = await searchContacts(userId, keyword);
+
+    res.status(200).json({
+        message: "Contacts searched successfully",
+        data: contacts,
+    });
+}
+
+export async function updateContactHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+    const contactId = req.params.id as string;
+
+    const validatedBody = editContactForm.safeParse(req.body);
+
+    if (!validatedBody.success) {
+        res.status(400).json({
+            message: "Validation failed",
+            errors: validatedBody.error.flatten(),
+        });
+        return;
+    }
+    const { firstname, lastname } = validatedBody.data;
+
+    const updatedContact = await updateContact(contactId, userId, {
+        firstname,
+        lastname,
+    });
+
+    if (!updatedContact || updatedContact.length === 0) {
+        res.status(404).json({
+            message: "The requested contact does not exist or you are not authorized to edit it.",
+        });
+        return;
+    }
+
+    res.status(200).json({
+        message: "Contact updated successfully",
+        data: updatedContact[0],
     });
 }

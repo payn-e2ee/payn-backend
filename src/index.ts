@@ -6,6 +6,7 @@ import { initMinio } from './storage/minio-storage.ts';
 import { Aedes, type AedesPublishPacket } from 'aedes';
 import { createWebSocketStream, WebSocketServer } from 'ws';
 import { authenticateHandler, authorizeForwardHandler, authorizePublishHandler, authorizeSubscribeHandler } from './handlers/mqtt-handlers.ts';
+import { errorMiddleware } from './handlers/errors-handlers.ts';
 
 async function main() {
     await initMinio();
@@ -16,6 +17,7 @@ async function main() {
     app.use(express.json());
 
     app.use('/api', apiRouter);
+    app.use(errorMiddleware);
 
     const aedes = await Aedes.createBroker({
         authenticate: authenticateHandler,
