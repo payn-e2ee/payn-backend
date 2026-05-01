@@ -18,9 +18,12 @@ export async function getUserByUsername(username: string): Promise<User | undefi
     });
 }
 
-export async function getUserById(userId: string): Promise<User | undefined> {
+export async function getUserById(userId: string) {
     return await db.query.users.findFirst({
         where: (users, { eq }) => eq(users.id, userId),
+        with: {
+            devices: true,
+        }
     });
 }
 

@@ -36,6 +36,13 @@
       "when": 1776611463914,
       "tag": "0004_special_trauma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777044459317,
+      "tag": "0005_skinny_wallow",
+      "breakpoints": true
     }
   ]
 }

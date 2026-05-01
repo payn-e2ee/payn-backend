@@ -53,15 +53,19 @@ export const messages = pgTable("messages", {
     created_at: timestamp().defaultNow(),
 });
 
-export type MessageDelivery = InferInsertModel<typeof messageDevliveries>;
-export const messageDevliveries = pgTable("message_devliveries", {
+export type MessageDelivery = InferInsertModel<typeof messageDeliveries>;
+export const messageDeliveries = pgTable("message_deliveries", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     message_id: uuid().references(() => messages.id),
-    device_id: uuid().references(() => devices.id),
-    user_id: uuid().references(() => users.id),
-    cipthertext: varchar({ length: 255 }).notNull(),
+    sender_device_id: uuid().references(() => devices.id),
+    sender_user_id: uuid().references(() => users.id),
+    recipient_device_id: uuid().references(() => devices.id),
+    recipient_user_id: uuid().references(() => users.id),
+    ciphertext: varchar({ length: 255 }).notNull(),
     auth_tag: varchar({ length: 255 }).notNull(),
     ephemeral_public_key: varchar({ length: 255 }).notNull(),
+    identity_key: varchar().notNull(),
+    message_counter: integer().notNull(),
     type: varchar({ length: 255 }).notNull(),
     attachment_id: varchar({ length: 255 }).notNull(),
     created_at: timestamp().defaultNow(),
@@ -93,7 +97,7 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
         fields: [messages.chat_id],
         references: [chats.id],
     }),
-    messageDevliveries: many(messageDevliveries),
+    messageDeliveries: many(messageDeliveries),
 }));
 
 export const chatsRelations = relations(chats, ({ many }) => ({
@@ -112,9 +116,9 @@ export const chatMembersRelations = relations(chatMembers, ({ one }) => ({
     }),
 }));
 
-export const messageDeliveriesRelations = relations(messageDevliveries, ({ one }) => ({
+export const messageDeliveriesRelations = relations(messageDeliveries, ({ one }) => ({
     message: one(messages, {
-        fields: [messageDevliveries.message_id],
+        fields: [messageDeliveries.message_id],
         references: [messages.id],
     }),
 }));
@@ -126,6 +130,18 @@ export const contactsRelations = relations(contacts, ({ one }) => ({
     }),
     contactUser: one(users, {
         fields: [contacts.contact_user_id],
+        references: [users.id],
+    }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+    devices: many(devices),
+    chatMembers: many(chatMembers),
+}));
+
+export const devicesRelations = relations(devices, ({ one }) => ({
+    user: one(users, {
+        fields: [devices.user_id],
         references: [users.id],
     }),
 }));

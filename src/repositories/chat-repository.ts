@@ -1,11 +1,12 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "../database/index.ts";
-import { chatMembers } from "../database/schema.ts";
+import { chatMembers, chats } from "../database/schema.ts";
 
 export async function listChats(userId: string, deviceId: string, offset: number, limit: number) {
     return await db.query.chats.findMany({
         offset: offset,
         limit: limit,
+        orderBy: (chats, { desc }) => desc(chats.created_at),
         where: (chats, { exists }) =>
             exists(
                 db.select()
@@ -33,6 +34,8 @@ export async function listChats(userId: string, deviceId: string, offset: number
                 },
             },
             messages: {
+                limit: 1,
+                orderBy: (messages, { desc }) => [desc(messages.created_at)],
                 columns: {
                     id: true,
                     chat_id: true,
@@ -42,26 +45,29 @@ export async function listChats(userId: string, deviceId: string, offset: number
                     created_at: true,
                 },
                 with: {
-                    messageDevliveries: {
+                    messageDeliveries: {
+                        limit: 1,
+                        orderBy: (messageDeliveries, { desc }) => [desc(messageDeliveries.created_at)],
+                        where: (messageDeliveries, { eq, or }) => or(
+                            eq(messageDeliveries.sender_device_id, deviceId),
+                            eq(messageDeliveries.recipient_device_id, deviceId)
+                        ),
                         columns: {
                             id: true,
                             message_id: true,
-                            device_id: true,
-                            user_id: true,
-                            cipthertext: true,
+                            sender_device_id: true,
+                            sender_user_id: true,
+                            recipient_device_id: true,
+                            recipient_user_id: true,
+                            ciphertext: true,
                             auth_tag: true,
                             ephemeral_public_key: true,
                             type: true,
                             attachment_id: true,
+                            identity_key: true,
+                            message_counter: true,
                             created_at: true,
                         },
-                        where: (messageDevliveries, { and, eq }) =>
-                            and(
-                                eq(messageDevliveries.user_id, userId),
-                                eq(messageDevliveries.device_id, deviceId)
-                            ),
-                        orderBy: (messageDevliveries, { desc }) => [desc(messageDevliveries.created_at)],
-                        limit: 1,
                     },
                 },
             },
@@ -96,10 +102,25 @@ export async function getChatForUserById(chatId: string, userId: string) {
                             lastname: true,
                             phone_number: true,
                             created_at: true,
+                        },
+                        with: {
+                            devices: true,
                         }
                     },
                 },
             },
         },
     });
+}
+
+export async function createChat() {
+    const newChats = await db
+        .insert(chats)
+        .values({})
+        .returning();
+    if (newChats.length == 0) {
+        return undefined;
+    } else {
+        return newChats[0];
+    }
 }
