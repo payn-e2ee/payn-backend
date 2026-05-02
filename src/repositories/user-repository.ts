@@ -37,7 +37,6 @@ export async function updateUserById(userId: string, updateUserForm: UpdateUserF
     return await db.update(users).set({
         firstname: updateUserForm.firstname,
         lastname: updateUserForm.lastname,
-        phone_number: updateUserForm.phone_number,
         username: updateUserForm.username,
     }).where(eq(users.id, userId)).returning();
 }
