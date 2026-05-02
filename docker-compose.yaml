@@ -16,6 +16,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       BUCKET_NAME: ${BUCKET_NAME}
+      BYPASS_TOKEN: ${BYPASS_TOKEN}
     depends_on:
       - minio
     command: node dist/index.js
