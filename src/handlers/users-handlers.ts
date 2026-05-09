@@ -3,6 +3,12 @@ import { createOneUser, getUserById, getUserByUsername, updateUserById } from ".
 import { createUserForm } from "../zod-schema/create-user-form.ts";
 import bcrypt from "bcrypt";
 import { updateUserForm } from "../zod-schema/update-user-form.ts";
+import { uploadFile, bucketName } from "../storage/minio-storage.ts";
+import { createAttachment } from "../repositories/attachment-repository.ts";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
+export const profileImageUpload = upload.single("profile_image");
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -25,6 +31,7 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
+            profile_image: user.profileImage,
         },
     });
 }
@@ -48,6 +55,7 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
+            profile_image: user.profileImage,
             created_at: user.created_at,
         },
     });
@@ -129,6 +137,8 @@ export async function registerHandler(req: Request, res: Response): Promise<void
 export async function updateCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
     const userId = authSession.user_id;
+
+    // For multipart/form-data, the fields are in req.body
     const result = updateUserForm.safeParse(req.body);
 
     if (!result.success) {
@@ -140,7 +150,29 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
     }
 
     try {
-        const updatedUsers = await updateUserById(userId, result.data);
+        let profile_image_id: string | undefined = undefined;
+
+        if (req.file) {
+            const file = req.file;
+            const objectName = `profiles/${userId}/${Date.now()}-${file.originalname}`;
+            
+            await uploadFile(objectName, file.buffer, file.mimetype);
+
+            const attachment = await createAttachment({
+                bucket: bucketName,
+                object_id: objectName,
+            });
+
+            if (attachment && attachment[0]) {
+                profile_image_id = attachment[0].id;
+            }
+        }
+
+        const updatedUsers = await updateUserById(userId, {
+            ...result.data,
+            profile_image_id,
+        });
+
         if (updatedUsers.length > 0) {
             res.status(200).json({
                 message: "user updated successfully",
@@ -149,10 +181,8 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
         }
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             message: "An unexpected error occurred. Please try again later.",
         });
     }
-
 }
