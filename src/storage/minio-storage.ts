@@ -27,3 +27,7 @@ export async function uploadFile(objectName: string, buffer: Buffer, contentType
         "Content-Type": contentType,
     });
 }
+
+export async function getPresignedUrl(objectName: string) {
+    return await minioClient.presignedGetObject(bucketName, objectName, 24 * 60 * 60);
+}

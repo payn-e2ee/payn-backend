@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { createOneUser, getUserById, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
+import { getPresignedUrl } from "../storage/minio-storage.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
 import bcrypt from "bcrypt";
 import { updateUserForm } from "../zod-schema/update-user-form.ts";
@@ -22,6 +23,11 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
         return;
     }
 
+    let profileImageUrl = null;
+    if (user.profileImage) {
+        profileImageUrl = await getPresignedUrl(user.profileImage.object_id);
+    }
+
     res.status(200).json({
         message: "user feteched successfully",
         data: {
@@ -31,7 +37,10 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
-            profile_image: user.profileImage,
+            profile_image: user.profileImage ? {
+                ...user.profileImage,
+                url: profileImageUrl
+            } : null,
         },
     });
 }
@@ -46,6 +55,11 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
         return;
     }
 
+    let profileImageUrl = null;
+    if (user.profileImage) {
+        profileImageUrl = await getPresignedUrl(user.profileImage.object_id);
+    }
+
     res.status(200).json({
         message: "user feteched successfully",
         data: {
@@ -55,7 +69,10 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
-            profile_image: user.profileImage,
+            profile_image: user.profileImage ? {
+                ...user.profileImage,
+                url: profileImageUrl
+            } : null,
             created_at: user.created_at,
         },
     });
@@ -174,9 +191,23 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
         });
 
         if (updatedUsers.length > 0) {
+            const user = updatedUsers[0];
+            let profileImageUrl = null;
+            
+            const fullUser = await getUserById(userId);
+            if (fullUser?.profileImage) {
+                profileImageUrl = await getPresignedUrl(fullUser.profileImage.object_id);
+            }
+
             res.status(200).json({
                 message: "user updated successfully",
-                data: updatedUsers[0],
+                data: {
+                    ...user,
+                    profile_image: fullUser?.profileImage ? {
+                        ...fullUser.profileImage,
+                        url: profileImageUrl
+                    } : null
+                },
             });
         }
     } catch (error) {
