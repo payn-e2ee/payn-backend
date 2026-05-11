@@ -68,6 +68,9 @@ export async function listChats(userId: string, deviceId: string, offset: number
                             message_counter: true,
                             created_at: true,
                         },
+                        with: {
+                            attachment: true,
+                        }
                     },
                 },
             },

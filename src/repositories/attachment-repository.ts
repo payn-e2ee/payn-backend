@@ -1,16 +1,25 @@
 import { db } from "../database/index.ts";
-import { attachments, type Attachment } from "../database/schema.ts";
-import { eq } from "drizzle-orm";
+import { attachments } from "../database/schema.ts";
 
-export async function createAttachment(data: Attachment) {
-    return await db.insert(attachments).values(data).returning();
+export async function createAttachment(bucketName: string, objectName: string, originalFileName: string, originalFileSize: number) {
+    const newAttachments = await db
+        .insert(attachments)
+        .values({
+            bucket_name: bucketName,
+            object_name: objectName,
+            original_file_name: originalFileName,
+            original_file_size: originalFileSize,
+        })
+        .returning();
+    if (newAttachments.length == 0) {
+        return undefined;
+    } else {
+        return newAttachments[0];
+    }
 }
 
-export async function getAttachmentById(id: string) {
-    const result = await db.select().from(attachments).where(eq(attachments.id, id));
-    return result[0];
-}
-
-export async function deleteAttachmentById(id: string) {
-    return await db.delete(attachments).where(eq(attachments.id, id)).returning();
+export async function getAttachmentById(attachmentId: string) {
+    return await db.query.attachments.findFirst({
+        where: (attachments, { eq }) => eq(attachments.id, attachmentId)
+    });
 }

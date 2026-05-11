@@ -15,7 +15,10 @@ export async function listMessages(chatId: string, deviceId: string, offset: num
                 where: (messageDeliveries, { eq, or }) => or(
                     eq(messageDeliveries.sender_device_id, deviceId),
                     eq(messageDeliveries.recipient_device_id, deviceId)
-                )
+                ),
+                with: {
+                    attachment: true,
+                },
             },
         },
     });

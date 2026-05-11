@@ -1,15 +1,11 @@
 import type { Request, Response } from "express";
+import crypto from "crypto";
 import { createOneUser, getUserById, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
-import { getPresignedUrl } from "../storage/minio-storage.ts";
-import { createUserForm } from "../zod-schema/create-user-form.ts";
-import bcrypt from "bcrypt";
-import { updateUserForm } from "../zod-schema/update-user-form.ts";
 import { uploadFile, bucketName } from "../storage/minio-storage.ts";
 import { createAttachment } from "../repositories/attachment-repository.ts";
-import multer from "multer";
-
-const upload = multer({ storage: multer.memoryStorage() });
-export const profileImageUpload = upload.single("profile_image");
+import { createUserForm } from "../zod-schema/create-user-form.ts";
+import { updateUserForm } from "../zod-schema/update-user-form.ts";
+import bcrypt from "bcrypt";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -23,11 +19,6 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
         return;
     }
 
-    let profileImageUrl = null;
-    if (user.profileImage) {
-        profileImageUrl = await getPresignedUrl(user.profileImage.object_id);
-    }
-
     res.status(200).json({
         message: "user feteched successfully",
         data: {
@@ -37,10 +28,7 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
-            profile_image: user.profileImage ? {
-                ...user.profileImage,
-                url: profileImageUrl
-            } : null,
+            profile_image_id: user.profile_image_id,
         },
     });
 }
@@ -55,11 +43,6 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
         return;
     }
 
-    let profileImageUrl = null;
-    if (user.profileImage) {
-        profileImageUrl = await getPresignedUrl(user.profileImage.object_id);
-    }
-
     res.status(200).json({
         message: "user feteched successfully",
         data: {
@@ -69,10 +52,7 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
-            profile_image: user.profileImage ? {
-                ...user.profileImage,
-                url: profileImageUrl
-            } : null,
+            profile_image_id: user.profile_image_id,
             created_at: user.created_at,
         },
     });
@@ -169,19 +149,21 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
     try {
         let profile_image_id: string | undefined = undefined;
 
-        if (req.file) {
-            const file = req.file;
-            const objectName = `profiles/${userId}/${Date.now()}-${file.originalname}`;
+        if (req.files && req.files.profile_image) {
+            const file = req.files.profile_image as any;
+            const objectName = crypto.randomUUID();
             
-            await uploadFile(objectName, file.buffer, file.mimetype);
+            await uploadFile(bucketName, objectName, file.data);
 
-            const attachment = await createAttachment({
-                bucket: bucketName,
-                object_id: objectName,
-            });
+            const attachment = await createAttachment(
+                bucketName,
+                objectName,
+                file.name,
+                file.size
+            );
 
-            if (attachment && attachment[0]) {
-                profile_image_id = attachment[0].id;
+            if (attachment) {
+                profile_image_id = attachment.id;
             }
         }
 
@@ -191,23 +173,9 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
         });
 
         if (updatedUsers.length > 0) {
-            const user = updatedUsers[0];
-            let profileImageUrl = null;
-            
-            const fullUser = await getUserById(userId);
-            if (fullUser?.profileImage) {
-                profileImageUrl = await getPresignedUrl(fullUser.profileImage.object_id);
-            }
-
             res.status(200).json({
                 message: "user updated successfully",
-                data: {
-                    ...user,
-                    profile_image: fullUser?.profileImage ? {
-                        ...fullUser.profileImage,
-                        url: profileImageUrl
-                    } : null
-                },
+                data: updatedUsers[0],
             });
         }
     } catch (error) {

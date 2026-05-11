@@ -22,12 +22,6 @@ export async function initMinio() {
     }
 }
 
-export async function uploadFile(objectName: string, buffer: Buffer, contentType: string) {
-    return await minioClient.putObject(bucketName, objectName, buffer, buffer.length, {
-        "Content-Type": contentType,
-    });
-}
-
-export async function getPresignedUrl(objectName: string) {
-    return await minioClient.presignedGetObject(bucketName, objectName, 24 * 60 * 60);
+export async function uploadFile(bucketName: string, objectName: string, file: string | Buffer<ArrayBufferLike>) {
+    return await minioClient.putObject(bucketName, objectName, file);
 }
