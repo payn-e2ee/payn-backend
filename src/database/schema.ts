@@ -16,8 +16,10 @@ export const users = pgTable("users", {
 export type Attachment = InferInsertModel<typeof attachments>;
 export const attachments = pgTable("attachments", {
     id: uuid().defaultRandom().primaryKey().notNull(),
-    bucket: varchar({ length: 255 }).notNull(),
-    object_id: varchar({ length: 255 }).notNull(),
+    bucket_name: varchar().notNull(),
+    object_name: varchar().notNull(),
+    original_file_name: varchar().notNull(),
+    original_file_size: integer().default(0),
     created_at: timestamp().defaultNow(),
 });
 
@@ -67,7 +69,7 @@ export const messageDeliveries = pgTable("message_deliveries", {
     identity_key: varchar().notNull(),
     message_counter: integer().notNull(),
     type: varchar({ length: 255 }).notNull(),
-    attachment_id: varchar({ length: 255 }).notNull(),
+    attachment_id: uuid().references(() => attachments.id),
     created_at: timestamp().defaultNow(),
 });
 
@@ -120,6 +122,10 @@ export const messageDeliveriesRelations = relations(messageDeliveries, ({ one })
     message: one(messages, {
         fields: [messageDeliveries.message_id],
         references: [messages.id],
+    }),
+    attachment: one(attachments, {
+        fields: [messageDeliveries.attachment_id],
+        references: [attachments.id],
     }),
 }));
 

@@ -68,20 +68,19 @@ export async function authorizePublishHandler(
 
         for (let i = 0; i < messageFrames.length; i++) {
             const messageFrame = messageFrames[i]!;
-
             const newMessageDelivery = await createMessageDelivery(
                 newMessage?.id,
                 sender_user_id,
                 sender_device_id,
                 messageFrame.header.recipient_user_id,
                 messageFrame.header.recipient_device_id,
-                "", // FIXME: Update when you handle attachments
+                messageFrame.header.attachment?.id || null,
                 messageFrame.auth_tag,
                 messageFrame.ciphertext,
                 messageFrame.header.sender_ephemeral_public_key,
                 messageFrame.header.sender_identity_key,
                 messageFrame.header.message_counter,
-                "text"
+                messageFrame.header.message_type,
             );
             if (!newMessageDelivery) {
                 console.error("authorizePublishHandler: [Error] Failed to create new messageDelivery");

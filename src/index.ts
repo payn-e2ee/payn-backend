@@ -7,6 +7,7 @@ import { Aedes, type AedesPublishPacket } from 'aedes';
 import { createWebSocketStream, WebSocketServer } from 'ws';
 import { authenticateHandler, authorizeForwardHandler, authorizePublishHandler, authorizeSubscribeHandler } from './handlers/mqtt-handlers.ts';
 import { errorMiddleware } from './handlers/errors-handlers.ts';
+import expressFileUpload from "express-fileupload";
 
 async function main() {
     await initMinio();
@@ -15,6 +16,7 @@ async function main() {
     const PORT = process.env.PORT || 3000;
 
     app.use(express.json());
+    app.use(expressFileUpload());
 
     app.use('/api', apiRouter);
     app.use(errorMiddleware);
