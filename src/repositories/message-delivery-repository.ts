@@ -7,7 +7,7 @@ export async function createMessageDelivery(
     senderDeviceId: string,
     recipientUserId: string,
     recipientDeviceId: string,
-    attachmentId: string,
+    attachmentId: string | null,
     authTag: string,
     ciphertext: string,
     ephemeralPublicKey: string,
