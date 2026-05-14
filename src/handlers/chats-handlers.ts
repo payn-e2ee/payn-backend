@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { createChat, getChatForUserById, listChats } from "../repositories/chat-repository.ts";
-import { createMessage, listMessages } from "../repositories/message-repository.ts";
+import { createMessage, listMessages, updateMessagesByIds } from "../repositories/message-repository.ts";
 import { initChatForm } from "../zod-schema/init-chat-form.ts";
 import { createMessageDelivery } from "../repositories/message-delivery-repository.ts";
 import { createChatMembers } from "../repositories/chat-member-repository.ts";
+import { updateMessagesBatchForm } from "../zod-schema/update-messages-batch-form.ts";
 
 export async function listChatsHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -126,5 +127,32 @@ export async function initChatHandler(req: Request, res: Response): Promise<void
     res.status(200).json({
         message: "chat created successfully",
         data: chat,
+    });
+}
+
+export async function updateMessagesBatchHandler(req: Request, res: Response): Promise<void> {
+    const result = updateMessagesBatchForm.safeParse(req.body);
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { user_id } = req.authSession!;
+    const chatId = req.params.id as string;
+    const { message_ids, status } = result.data;
+
+    const messages = await updateMessagesByIds(chatId, user_id, message_ids, status);
+    if (messages.length == 0) {
+        res.status(401).json({
+            message: "you are not authorized to access it.",
+        });
+        return;
+    }
+
+    res.status(200).json({
+        message: "messages updated successfully",
     });
 }

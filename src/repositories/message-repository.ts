@@ -1,5 +1,6 @@
+import { and, eq, exists, inArray } from "drizzle-orm";
 import { db } from "../database/index.ts";
-import { messages } from "../database/schema.ts";
+import { chatMembers, messages } from "../database/schema.ts";
 
 export async function listMessages(chatId: string, deviceId: string, offset: number, limit: number) {
     return await db.query.messages.findMany({
@@ -34,4 +35,26 @@ export async function createMessage(chatId: string, userId: string, deviceId: st
     } else {
         return newMessages[0];
     }
+}
+
+export async function updateMessagesByIds(chatId: string, userId: string, messagesIds: Array<string>, status: string) {
+    return await db.update(messages)
+        .set({ status })
+        .where(
+            and(
+                inArray(messages.id, messagesIds),
+                eq(messages.chat_id, chatId),
+                exists(
+                    db.select()
+                        .from(chatMembers)
+                        .where(
+                            and(
+                                eq(chatMembers.chat_id, chatId),
+                                eq(chatMembers.user_id, userId)
+                            )
+                        )
+                )
+            )
+        )
+        .returning();
 }
