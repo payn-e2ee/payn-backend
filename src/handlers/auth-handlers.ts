@@ -14,6 +14,7 @@ const PROTECTED_ROUTES: string[] = [
     "/contacts/:id",
     "/chats/:id",
     "/chats/:id/messages",
+    "/chats/:id/messages/batch",
 ];
 
 export async function authMiddlewareHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
