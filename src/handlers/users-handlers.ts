@@ -1,8 +1,11 @@
 import type { Request, Response } from "express";
+import crypto from "crypto";
 import { createOneUser, getUserById, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
+import { uploadFile, bucketName } from "../storage/minio-storage.ts";
+import { createAttachment } from "../repositories/attachment-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
-import bcrypt from "bcrypt";
 import { updateUserForm } from "../zod-schema/update-user-form.ts";
+import bcrypt from "bcrypt";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -25,6 +28,7 @@ export async function getCurrentUserHandler(req: Request, res: Response): Promis
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
+            profile_image_id: user.profile_image_id,
         },
     });
 }
@@ -48,6 +52,7 @@ export async function getUserByIdHandler(req: Request, res: Response): Promise<v
             lastname: user.lastname,
             phone_number: user.phone_number,
             devices: user.devices,
+            profile_image_id: user.profile_image_id,
             created_at: user.created_at,
         },
     });
@@ -129,6 +134,8 @@ export async function registerHandler(req: Request, res: Response): Promise<void
 export async function updateCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
     const userId = authSession.user_id;
+
+    // For multipart/form-data, the fields are in req.body
     const result = updateUserForm.safeParse(req.body);
 
     if (!result.success) {
@@ -140,7 +147,31 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
     }
 
     try {
-        const updatedUsers = await updateUserById(userId, result.data);
+        let profile_image_id: string | undefined = undefined;
+
+        if (req.files && req.files.profile_image) {
+            const file = req.files.profile_image as any;
+            const objectName = crypto.randomUUID();
+            
+            await uploadFile(bucketName, objectName, file.data);
+
+            const attachment = await createAttachment(
+                bucketName,
+                objectName,
+                file.name,
+                file.size
+            );
+
+            if (attachment) {
+                profile_image_id = attachment.id;
+            }
+        }
+
+        const updatedUsers = await updateUserById(userId, {
+            ...result.data,
+            profile_image_id,
+        });
+
         if (updatedUsers.length > 0) {
             res.status(200).json({
                 message: "user updated successfully",
@@ -149,10 +180,8 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
         }
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             message: "An unexpected error occurred. Please try again later.",
         });
     }
-
 }

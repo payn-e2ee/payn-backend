@@ -23,6 +23,7 @@ export async function getUserById(userId: string) {
         where: (users, { eq }) => eq(users.id, userId),
         with: {
             devices: true,
+            profileImage: true,
         }
     });
 }
@@ -33,10 +34,16 @@ export async function getUserByPhoneNumber(phoneNumber: string): Promise<User | 
     });
 }
 
-export async function updateUserById(userId: string, updateUserForm: UpdateUserForm): Promise<Array<User>> {
-    return await db.update(users).set({
+export async function updateUserById(userId: string, updateUserForm: UpdateUserForm & { profile_image_id?: string | undefined }): Promise<Array<User>> {
+    const updateData: any = {
         firstname: updateUserForm.firstname,
         lastname: updateUserForm.lastname,
         username: updateUserForm.username,
-    }).where(eq(users.id, userId)).returning();
+    };
+
+    if (updateUserForm.profile_image_id) {
+        updateData.profile_image_id = updateUserForm.profile_image_id;
+    }
+
+    return await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
 }

@@ -9,6 +9,7 @@ export const users = pgTable("users", {
     lastname: varchar(),
     password: varchar().notNull(),
     phone_number: varchar().notNull(),
+    profile_image_id: uuid().references(() => attachments.id),
     is_verified: boolean().default(false),
     created_at: timestamp(),
 });
@@ -140,9 +141,13 @@ export const contactsRelations = relations(contacts, ({ one }) => ({
     }),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
     devices: many(devices),
     chatMembers: many(chatMembers),
+    profileImage: one(attachments, {
+        fields: [users.profile_image_id],
+        references: [attachments.id],
+    }),
 }));
 
 export const devicesRelations = relations(devices, ({ one }) => ({
@@ -151,3 +156,4 @@ export const devicesRelations = relations(devices, ({ one }) => ({
         references: [users.id],
     }),
 }));
+
