@@ -3,6 +3,8 @@ import { createMessage } from "../repositories/message-repository.ts";
 import { createMessageDelivery } from "../repositories/message-delivery-repository.ts";
 import { verifyToken } from "../helpers/jwt-helpers.ts";
 import { getChatForUserById } from "../repositories/chat-repository.ts";
+import { sendNotificationToUser } from "../helpers/notification-helper.ts";
+import { getUserById } from "../repositories/user-repository.ts";
 
 export async function authenticateHandler(
     client: Client,
@@ -91,6 +93,29 @@ export async function authorizePublishHandler(
             messageFrame.header.message_id = newMessage.id;
         }
         packet.payload = Buffer.from(JSON.stringify(messageFrames));
+
+        // notify
+        const recipients = new Set<string>();
+        messageFrames.forEach((frame) => {
+            if (frame.header.recipient_user_id !== sender_user_id) {
+                recipients.add(frame.header.recipient_user_id);
+            }
+        });
+
+        const sender = await getUserById(sender_user_id);
+        const senderName = sender ? (sender.firstname ? `${sender.firstname} ${sender.lastname}` : sender.username) : "Someone";
+
+        recipients.forEach((recipientId) => {
+            sendNotificationToUser(
+                recipientId,
+                senderName,
+                "Sent you a message",
+                {
+                    chat_id,
+                    type: "message"
+                }
+            );
+        });
     }
 
     callback(null);

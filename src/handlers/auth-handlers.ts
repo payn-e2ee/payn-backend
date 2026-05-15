@@ -55,7 +55,7 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    const { username, password, base64_identity_key } = result.data;
+    const { username, password, base64_identity_key, fcm_token } = result.data;
 
     try {
         const user = await getUserByUsername(username);
@@ -74,7 +74,7 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        const device = await createDevice(user.id!, base64_identity_key);
+        const device = await createDevice(user.id!, base64_identity_key, fcm_token);
 
         const tokenData = {
             user_id: user.id,
