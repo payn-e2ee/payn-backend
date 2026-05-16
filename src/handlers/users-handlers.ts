@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import crypto from "crypto";
-import { createOneUser, getUserById, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
+import { createOneUser, getUserById, getUserByIdAndDeviceId, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
 import { uploadFile, bucketName } from "../storage/minio-storage.ts";
 import { createAttachment } from "../repositories/attachment-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
@@ -10,8 +10,9 @@ import bcrypt from "bcrypt";
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
     const userId = authSession.user_id;
+    const deviceId = authSession.device_id;
 
-    const user = await getUserById(userId);
+    const user = await getUserByIdAndDeviceId(userId, deviceId);
     if (!user) {
         res.status(401).json({
             message: "Unauthorized",
@@ -152,7 +153,7 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
         if (req.files && req.files.profile_image) {
             const file = req.files.profile_image as any;
             const objectName = crypto.randomUUID();
-            
+
             await uploadFile(bucketName, objectName, file.data);
 
             const attachment = await createAttachment(
