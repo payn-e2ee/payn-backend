@@ -28,6 +28,18 @@ export async function getUserById(userId: string) {
     });
 }
 
+export async function getUserByIdAndDeviceId(userId: string, deviceId: string) {
+    return await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId),
+        with: {
+            devices: {
+                where: (devices, { eq }) => eq(devices.id, deviceId),
+            },
+            profileImage: true,
+        }
+    });
+}
+
 export async function getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
     return await db.query.users.findFirst({
         where: (users, { eq }) => eq(users.phone_number, phoneNumber),
