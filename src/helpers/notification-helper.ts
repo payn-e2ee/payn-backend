@@ -29,47 +29,44 @@ function initializeFirebase() {
     }
 }
 
-export async function sendNotificationToUser(userId: string, title: string, body: string, data?: Record<string, string>) {
+export async function sendNotificationToToken(
+    token: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+    sendAsDataOnly: boolean = false
+) {
     initializeFirebase();
 
     if (!isFirebaseInitialized) return;
 
     try {
-        const userDevices = await db.query.devices.findMany({
-            where: eq(devices.user_id, userId),
-        });
-
-        const tokens = userDevices
-            .map((d) => d.fcm_token)
-            .filter((t): t is string => !!t);
-
-        if (tokens.length === 0) {
-            console.log(`No FCM tokens found for user ${userId}`);
-            return;
-        }
-
-        const message: admin.messaging.MulticastMessage = {
-            tokens,
-            notification: {
-                title,
-                body,
+        const message: admin.messaging.Message = {
+            token,
+            data: {
+                ...data,
+                ...(sendAsDataOnly ? { title, body } : {}),
             },
-            data,
+            ...(sendAsDataOnly ? {} : {
+                notification: {
+                    title,
+                    body,
+                }
+            }),
         };
 
-        const response = await admin.messaging().sendEachForMulticast(message);
-        console.log(`Successfully sent ${response.successCount} notifications to user ${userId}`);
-        
-        if (response.failureCount > 0) {
-            const failedTokens: string[] = [];
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success) {
-                    failedTokens.push(tokens[idx]!);
-                    console.error(`Failed to send notification to token ${tokens[idx]}:`, resp.error);
-                }
-            });
+        await admin.messaging().send(message);
+        console.log(`Successfully sent notification`);
+    } catch (error: any) {
+        console.error(`Failed to send notification:`, error);
+        if (
+            error?.code === 'messaging/registration-token-not-registered' ||
+            error?.code === 'messaging/invalid-registration-token'
+        ) {
+            console.log(`Removing invalid token ${token} from database.`);
+            await db.update(devices).set({ fcm_token: null }).where(eq(devices.fcm_token, token));
         }
-    } catch (error) {
-        console.error(`Error sending notification to user ${userId}:`, error);
     }
 }
+
+

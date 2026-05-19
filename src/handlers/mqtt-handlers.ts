@@ -3,8 +3,12 @@ import { createMessage } from "../repositories/message-repository.ts";
 import { createMessageDelivery } from "../repositories/message-delivery-repository.ts";
 import { verifyToken } from "../helpers/jwt-helpers.ts";
 import { getChatForUserById } from "../repositories/chat-repository.ts";
-import { sendNotificationToUser } from "../helpers/notification-helper.ts";
+import { sendNotificationToToken } from "../helpers/notification-helper.ts";
 import { getUserById } from "../repositories/user-repository.ts";
+import { db } from "../database/index.ts";
+import { devices } from "../database/schema.ts";
+import { eq } from "drizzle-orm";
+
 
 export async function authenticateHandler(
     client: Client,
@@ -94,29 +98,39 @@ export async function authorizePublishHandler(
         }
         packet.payload = Buffer.from(JSON.stringify(messageFrames));
 
-        // notify
-        const recipients = new Set<string>();
-        messageFrames.forEach((frame) => {
-            if (frame.header.recipient_user_id !== sender_user_id) {
-                recipients.add(frame.header.recipient_user_id);
-            }
-        });
-
         const sender = await getUserById(sender_user_id);
         const senderName = sender ? (sender.firstname ? `${sender.firstname} ${sender.lastname}` : sender.username) : "Someone";
 
-        recipients.forEach((recipientId) => {
-            sendNotificationToUser(
-                recipientId,
-                senderName,
-                "Sent you a message",
-                {
-                    chat_id,
-                    type: "message"
-                }
-            );
-        });
+        for (const frame of messageFrames) {
+            if (frame.header.recipient_user_id === sender_user_id) {
+                continue;
+            }
+
+            const device = await db.query.devices.findFirst({
+                where: eq(devices.id, frame.header.recipient_device_id),
+            });
+
+            if (device && device.fcm_token) {
+                await sendNotificationToToken(
+                    device.fcm_token,
+                    senderName,
+                    "New Message",
+                    {
+                        chat_id,
+                        type: "message",
+                        ciphertext: frame.ciphertext,
+                        ephemeral_public_key: frame.header.sender_ephemeral_public_key,
+                        message_counter: frame.header.message_counter.toString(),
+                        sender_user_id: frame.header.sender_user_id,
+                        sender_device_id: frame.header.sender_device_id,
+                    },
+                    true, 
+                    //mobile app's background service decrypts it before displaying!
+                );
+            }
+        }
     }
+
 
     callback(null);
 
