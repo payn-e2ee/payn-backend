@@ -1,6 +1,6 @@
-import { and, eq, exists, inArray } from "drizzle-orm";
+import { and, eq, exists, inArray, or } from "drizzle-orm";
 import { db } from "../database/index.ts";
-import { chatMembers, messages } from "../database/schema.ts";
+import { chatMembers, messageDeliveries, messages } from "../database/schema.ts";
 
 export async function listMessages(chatId: string, deviceId: string, offset: number, limit: number) {
     return await db.query.messages.findMany({
@@ -10,6 +10,20 @@ export async function listMessages(chatId: string, deviceId: string, offset: num
         where: (messages, { and, eq }) =>
             and(
                 eq(messages.chat_id, chatId),
+                exists(
+                    db
+                        .select()
+                        .from(messageDeliveries)
+                        .where(
+                            and(
+                                eq(messageDeliveries.message_id, messages.id),
+                                or(
+                                    eq(messageDeliveries.sender_device_id, deviceId),
+                                    eq(messageDeliveries.recipient_device_id, deviceId)
+                                )
+                            )
+                        )
+                )
             ),
         with: {
             messageDeliveries: {

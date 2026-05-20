@@ -6,6 +6,7 @@ import { createDevice } from "../repositories/device.repository.ts";
 import { generateToken, verifyToken } from "../helpers/jwt-helpers.ts";
 import { sendOtpForm, verifyOtpForm } from "../zod-schema/auth-forms.ts";
 import { match } from "path-to-regexp";
+import { registerDeviceForm } from "../zod-schema/register-device-from.ts";
 
 const PROTECTED_ROUTES: string[] = [
     "/users",
@@ -55,7 +56,7 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
         return;
     }
 
-    const { username, password, base64_identity_key } = result.data;
+    const { username, password } = result.data;
 
     try {
         const user = await getUserByUsername(username);
@@ -74,11 +75,8 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        const device = await createDevice(user.id!, base64_identity_key);
-
         const tokenData = {
             user_id: user.id,
-            device_id: device?.id,
         };
 
         const accessToken = generateToken(tokenData);
@@ -103,6 +101,45 @@ export async function loginHandler(req: Request, res: Response): Promise<void> {
             message: "An unexpected error occurred. Please try again later.",
         });
     }
+}
+
+export async function registerDeviceHandler(req: Request, res: Response): Promise<void> {
+    const result = registerDeviceForm.safeParse(req.body);
+    if (!result.success) {
+        res.status(400).json({
+            message: "Invalid request data",
+            errors: result.error.flatten(),
+        });
+        return;
+    }
+
+    const { base64_identity_key, access_token } = result.data;
+
+    const jwtPayload = verifyToken(access_token);
+    if (!jwtPayload) {
+        res.status(401).json({
+            message: "Unauthorized",
+        });
+        return;
+    }
+
+    const deviceRegistrationSession = jwtPayload as DeviceRegistrationSession;
+    const device = await createDevice(deviceRegistrationSession.user_id, base64_identity_key);
+
+    const tokenData = {
+        user_id: deviceRegistrationSession.user_id,
+        device_id: device?.id,
+    };
+
+    const accessToken = generateToken(tokenData);
+
+    res.status(200).json({
+        message: "Device registred successfully",
+        data: {
+            access_token: accessToken,
+            device,
+        },
+    });
 }
 
 export async function sendOtpHandler(req: Request, res: Response): Promise<void> {
@@ -156,6 +193,7 @@ export async function verifyOtpHandler(req: Request, res: Response): Promise<voi
         });
     }
 }
+
 function isProtectedPath(path: string): boolean {
     return PROTECTED_ROUTES.some((pattern) => {
         const matcher = match(pattern, { decode: decodeURIComponent });
