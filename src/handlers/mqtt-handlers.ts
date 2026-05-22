@@ -165,8 +165,8 @@ export function authorizeForwardHandler(
         const chatId = packet.topic.slice(5);
         let messageFrames = JSON.parse(packet.payload.toString()) as MessageFrameDTO[];
         messageFrames = messageFrames.filter((messageFrame) => {
-            return messageFrame.header.recipient_user_id == client.authSession.user_id &&
-                messageFrame.header.recipient_device_id == client.authSession.device_id
+            return messageFrame.header.recipient_device_id == client.authSession.device_id &&
+                messageFrame.header.sender_device_id != client.authSession.device_id;
         });
         if (messageFrames.length == 0) {
             return null;
