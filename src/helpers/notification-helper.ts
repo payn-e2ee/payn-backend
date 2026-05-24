@@ -4,30 +4,19 @@ import { devices } from '../database/schema.ts';
 import { eq } from 'drizzle-orm';
 import path from 'path';
 
-let isFirebaseInitialized = false;
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 
-function initializeFirebase() {
-    if (isFirebaseInitialized) return;
+const absolutePath = serviceAccountPath
+    ? path.isAbsolute(serviceAccountPath)
+        ? serviceAccountPath
+        : path.resolve(process.cwd(), serviceAccountPath)
+    : undefined;
 
-    try {
-        const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-        if (serviceAccountPath) {
-            const absolutePath = path.isAbsolute(serviceAccountPath) 
-                ? serviceAccountPath 
-                : path.resolve(process.cwd(), serviceAccountPath);
-            
-            admin.initializeApp({
-                credential: admin.credential.cert(absolutePath),
-            });
-            isFirebaseInitialized = true;
-            console.log('Firebase Admin initialized successfully');
-        } else {
-            console.warn('FIREBASE_SERVICE_ACCOUNT_PATH not provided. Notifications will not be sent.');
-        }
-    } catch (error) {
-        console.error('Error initializing Firebase Admin:', error);
-    }
-}
+export const firebaseApp = absolutePath
+    ? admin.initializeApp({
+          credential: admin.credential.cert(absolutePath),
+      })
+    : undefined;
 
 export async function sendNotificationToToken(
     token: string,
@@ -36,9 +25,7 @@ export async function sendNotificationToToken(
     data?: Record<string, string>,
     sendAsDataOnly: boolean = false
 ) {
-    initializeFirebase();
-
-    if (!isFirebaseInitialized) return;
+    if (!firebaseApp) return;
 
     try {
         const message: admin.messaging.Message = {
@@ -68,5 +55,3 @@ export async function sendNotificationToToken(
         }
     }
 }
-
-
