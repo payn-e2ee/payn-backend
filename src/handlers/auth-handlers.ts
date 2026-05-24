@@ -113,7 +113,7 @@ export async function registerDeviceHandler(req: Request, res: Response): Promis
         return;
     }
 
-    const { base64_identity_key, access_token } = result.data;
+    const { base64_identity_key, access_token, fcm_token } = result.data;
 
     const jwtPayload = verifyToken(access_token);
     if (!jwtPayload) {
@@ -124,7 +124,7 @@ export async function registerDeviceHandler(req: Request, res: Response): Promis
     }
 
     const deviceRegistrationSession = jwtPayload as DeviceRegistrationSession;
-    const device = await createDevice(deviceRegistrationSession.user_id, base64_identity_key);
+    const device = await createDevice(deviceRegistrationSession.user_id, base64_identity_key,fcm_token);
 
     const tokenData = {
         user_id: deviceRegistrationSession.user_id,

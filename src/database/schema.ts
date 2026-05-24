@@ -29,6 +29,7 @@ export const devices = pgTable("devices", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     user_id: uuid().references(() => users.id),
     identity_key: varchar({ length: 255 }).notNull().unique(),
+    fcm_token: varchar({ length: 255 }),
     created_at: timestamp().defaultNow(),
 });
 

@@ -6,6 +6,7 @@ import { createAttachment } from "../repositories/attachment-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
 import { updateUserForm } from "../zod-schema/update-user-form.ts";
 import bcrypt from "bcrypt";
+import { updateDeviceFcmToken } from "../repositories/device.repository.ts";
 
 export async function getCurrentUserHandler(req: Request, res: Response): Promise<void> {
     const authSession = req.authSession!;
@@ -179,6 +180,34 @@ export async function updateCurrentUserHandler(req: Request, res: Response): Pro
                 data: updatedUsers[0],
             });
         }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "An unexpected error occurred. Please try again later.",
+        });
+    }
+}
+
+export async function updateFcmTokenHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const deviceId = authSession.device_id;
+    const { fcm_token } = req.body;
+
+    if (!fcm_token || typeof fcm_token !== "string") {
+        res.status(400).json({ message: "fcm_token is required" });
+        return;
+    }
+
+    if (!deviceId) {
+        res.status(400).json({ message: "Invalid session device" });
+        return;
+    }
+
+    try {
+        await updateDeviceFcmToken(deviceId, fcm_token);
+        res.status(200).json({
+            message: "FCM token updated successfully",
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({
