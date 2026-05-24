@@ -52,7 +52,7 @@ export const messages = pgTable("messages", {
     chat_id: uuid().references(() => chats.id),
     user_id: uuid().references(() => users.id),
     device_id: uuid().references(() => devices.id),
-    status: varchar({ length: 255 }).notNull(),
+    status: varchar().notNull(),
     created_at: timestamp().defaultNow(),
 });
 
@@ -64,12 +64,12 @@ export const messageDeliveries = pgTable("message_deliveries", {
     sender_user_id: uuid().references(() => users.id),
     recipient_device_id: uuid().references(() => devices.id),
     recipient_user_id: uuid().references(() => users.id),
-    ciphertext: varchar({ length: 255 }).notNull(),
-    auth_tag: varchar({ length: 255 }).notNull(),
-    ephemeral_public_key: varchar({ length: 255 }).notNull(),
+    ciphertext: varchar().notNull(),
+    auth_tag: varchar().notNull(),
+    ephemeral_public_key: varchar().notNull(),
     identity_key: varchar().notNull(),
     message_counter: integer().notNull(),
-    type: varchar({ length: 255 }).notNull(),
+    type: varchar().notNull(),
     attachment_id: uuid().references(() => attachments.id),
     created_at: timestamp().defaultNow(),
 });
