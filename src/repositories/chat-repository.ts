@@ -28,6 +28,7 @@ export async function listChats(userId: string, deviceId: string, offset: number
                             firstname: true,
                             lastname: true,
                             phone_number: true,
+                            profile_image_id: true,
                             created_at: true,
                         }
                     },
@@ -117,6 +118,7 @@ export async function getChatForUserById(chatId: string, userId: string) {
                             firstname: true,
                             lastname: true,
                             phone_number: true,
+                            profile_image_id: true,
                             created_at: true,
                         },
                         with: {

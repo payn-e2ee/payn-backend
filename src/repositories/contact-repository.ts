@@ -15,6 +15,7 @@ export async function listContacts(userId: string, offset: number, limit: number
                     firstname: true,
                     lastname: true,
                     phone_number: true,
+                    profile_image_id: true,
                     created_at: true,
                 },
                 with: {
@@ -45,6 +46,7 @@ export async function getContactForUserById(contactId: string, userId: string) {
                     firstname: true,
                     lastname: true,
                     phone_number: true,
+                    profile_image_id: true,
                     created_at: true,
                 }
             },
