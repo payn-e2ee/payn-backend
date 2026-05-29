@@ -1,9 +1,14 @@
 import { Router } from "express";
-import { getCurrentUserHandler, getUserByIdHandler, updateCurrentUserHandler, updateFcmTokenHandler } from "../../handlers/users-handlers.ts";
+import { getCurrentUserHandler, getUserByIdHandler, searchUsersHandler, updateCurrentUserHandler, updateFcmTokenHandler } from "../../handlers/users-handlers.ts";
 
 const router = Router();
 
-router.get("/", getCurrentUserHandler);
+router.get("/", (req, res) => {
+    if (req.query.query !== undefined) {
+        return searchUsersHandler(req, res);
+    }
+    return getCurrentUserHandler(req, res);
+});
 router.patch("/fcm-token", updateFcmTokenHandler);
 router.get("/:id", getUserByIdHandler);
 router.patch("/", updateCurrentUserHandler);
