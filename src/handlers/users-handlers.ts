@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import crypto from "crypto";
-import { createOneUser, getUserById, getUserByIdAndDeviceId, getUserByUsername, updateUserById } from "../repositories/user-repository.ts";
+import { createOneUser, getUserById, getUserByIdAndDeviceId, getUserByUsername, searchUsersWithChatAndContactStatus, updateUserById } from "../repositories/user-repository.ts";
 import { uploadFile, bucketName } from "../storage/minio-storage.ts";
 import { createAttachment } from "../repositories/attachment-repository.ts";
 import { createUserForm } from "../zod-schema/create-user-form.ts";
@@ -214,4 +214,27 @@ export async function updateFcmTokenHandler(req: Request, res: Response): Promis
             message: "An unexpected error occurred. Please try again later.",
         });
     }
+}
+
+export async function searchUsersHandler(req: Request, res: Response): Promise<void> {
+    const authSession = req.authSession!;
+    const { user_id: userId } = authSession;
+
+    const keyword = req.query.query?.toString().trim() || "";
+    if (!keyword) {
+        res.status(400).json({
+            message: "query parameter is required",
+        });
+        return;
+    }
+
+    const limit = parseInt(req.query.limit?.toString() || "10") || 10;
+    const boundedLimit = Math.max(1, Math.min(limit, 50));
+
+    const users = await searchUsersWithChatAndContactStatus(userId, keyword, boundedLimit);
+
+    res.status(200).json({
+        message: "Users searched successfully",
+        data: users,
+    });
 }
