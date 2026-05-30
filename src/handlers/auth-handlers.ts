@@ -10,9 +10,13 @@ import { registerDeviceForm } from "../zod-schema/register-device-from.ts";
 
 const PROTECTED_ROUTES: string[] = [
     "/users",
-    "/chats",
+    "/users/fcm-token",
+
     "/contacts",
     "/contacts/:id",
+    "/contacts/search",
+
+    "/chats",
     "/chats/:id",
     "/chats/:id/messages",
     "/chats/:id/messages/batch",
@@ -124,7 +128,7 @@ export async function registerDeviceHandler(req: Request, res: Response): Promis
     }
 
     const deviceRegistrationSession = jwtPayload as DeviceRegistrationSession;
-    const device = await createDevice(deviceRegistrationSession.user_id, base64_identity_key,fcm_token);
+    const device = await createDevice(deviceRegistrationSession.user_id, base64_identity_key, fcm_token);
 
     const tokenData = {
         user_id: deviceRegistrationSession.user_id,
