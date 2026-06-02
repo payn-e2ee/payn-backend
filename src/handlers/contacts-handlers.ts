@@ -9,7 +9,7 @@ export async function listContactsHandler(req: Request, res: Response): Promise<
     const { user_id: userId } = authSession;
 
     const offset = parseInt(req.query.offset?.toString() || "0") || 0;
-    const limit = parseInt(req.query.offset?.toString() || "10") || 10;
+    const limit = parseInt(req.query.limit?.toString() || "10") || 10;
     const contacts = await listContacts(userId, offset, limit);
 
     res.status(200).json({

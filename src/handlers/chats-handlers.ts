@@ -11,7 +11,7 @@ export async function listChatsHandler(req: Request, res: Response): Promise<voi
     const { user_id: userId, device_id: deviceId } = authSession;
 
     const offset = parseInt(req.query.offset?.toString() || "0") || 0;
-    const limit = parseInt(req.query.offset?.toString() || "10") || 10;
+    const limit = parseInt(req.query.limit?.toString() || "10") || 10;
     const chats = await listChats(userId, deviceId, offset, limit);
 
     res.status(200).json({
@@ -45,7 +45,7 @@ export async function listMessagesHandler(req: Request, res: Response): Promise<
     const id = req.params.id as string;
 
     const offset = parseInt(req.query.offset?.toString() || "0") || 0;
-    const limit = parseInt(req.query.offset?.toString() || "10") || 10;
+    const limit = parseInt(req.query.limit?.toString() || "10") || 10;
     const messages = await listMessages(id, deviceId, offset, limit);
 
     res.status(200).json({
