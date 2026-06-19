@@ -11,7 +11,7 @@ export const users = pgTable("users", {
     phone_number: varchar().notNull(),
     profile_image_id: uuid().references(() => attachments.id),
     is_verified: boolean().default(false),
-    created_at: timestamp(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Attachment = InferInsertModel<typeof attachments>;
@@ -21,7 +21,7 @@ export const attachments = pgTable("attachments", {
     object_name: varchar().notNull(),
     original_file_name: varchar().notNull(),
     original_file_size: integer().default(0),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Device = InferInsertModel<typeof devices>;
@@ -30,13 +30,13 @@ export const devices = pgTable("devices", {
     user_id: uuid().references(() => users.id),
     identity_key: varchar({ length: 255 }).notNull().unique(),
     fcm_token: varchar({ length: 255 }),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Chat = InferInsertModel<typeof chats>;
 export const chats = pgTable("chats", {
     id: uuid().defaultRandom().primaryKey().notNull(),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type ChatMember = InferInsertModel<typeof chatMembers>;
@@ -44,7 +44,7 @@ export const chatMembers = pgTable("chat_members", {
     id: uuid().defaultRandom().primaryKey().notNull(),
     chat_id: uuid().references(() => chats.id),
     user_id: uuid().references(() => users.id),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Message = InferInsertModel<typeof messages>;
@@ -54,7 +54,7 @@ export const messages = pgTable("messages", {
     user_id: uuid().references(() => users.id),
     device_id: uuid().references(() => devices.id),
     status: varchar().notNull(),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type MessageDelivery = InferInsertModel<typeof messageDeliveries>;
@@ -72,7 +72,7 @@ export const messageDeliveries = pgTable("message_deliveries", {
     message_counter: integer().notNull(),
     type: varchar().notNull(),
     attachment_id: uuid().references(() => attachments.id),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Notification = InferInsertModel<typeof notifications>;
@@ -82,7 +82,7 @@ export const notifications = pgTable("notifications", {
     title: varchar({ length: 255 }).notNull(),
     description: varchar({ length: 255 }).notNull(),
     status: varchar({ length: 255 }),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 export type Contact = InferInsertModel<typeof contacts>;
@@ -92,7 +92,7 @@ export const contacts = pgTable("contacts", {
     firstname: varchar(),
     lastname: varchar(),
     contact_user_id: uuid().references(() => users.id),
-    created_at: timestamp().defaultNow(),
+    created_at: timestamp({ withTimezone: true, mode: "date" }).defaultNow(),
 });
 
 // Relations
