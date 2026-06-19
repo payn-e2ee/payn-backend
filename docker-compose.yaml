@@ -17,6 +17,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       BUCKET_NAME: ${BUCKET_NAME}
       BYPASS_TOKEN: ${BYPASS_TOKEN}
+      FIREBASE_SERVICE_ACCOUNT_PATH: ${FIREBASE_SERVICE_ACCOUNT_PATH}
     depends_on:
       - minio
     command: node dist/index.js
